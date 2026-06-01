@@ -60,14 +60,15 @@ Os dados são representados por _records_ imutáveis. Uma vez criado, um `LogEnt
 
 ```haskell
 data LogEntry = LogEntry
-  { ipAddress  :: String
-  , method     :: String
-  , endpoint   :: String
-  , statusCode :: Int
-  , bytesSent  :: Int
-  , hour       :: String
-  , isMedia    :: Bool
-  } deriving (Show, Eq)
+  { ipAddress :: B.ByteString,
+    method :: B.ByteString,
+    endpoint :: B.ByteString,
+    statusCode :: Int,
+    bytesSent :: Int,
+    hour :: B.ByteString,
+    isMedia :: Bool
+  }
+  deriving (Show, Eq)
 ```
 
 ### Map (Transformação)
@@ -180,7 +181,7 @@ Este projeto utiliza um dataset de logs de acesso web, disponível publicamente 
    ```bash
    python scripts/amostra_aleatoria_dataset.py
    ```
-   > **Nota:** O script utiliza o algoritmo de **Reservoir Sampling** para selecionar `k` linhas aleatórias de forma uniforme, sem carregar o arquivo inteiro na memória. Por padrão, `k = 500.000`. Edite a variável `k` no script para alterar o tamanho da amostra.
+   > **Nota:** O script utiliza o algoritmo de **Reservoir Sampling** para selecionar `k` linhas aleatórias de forma uniforme, sem carregar o arquivo inteiro na memória. Por padrão, `k = 100.000`. Edite a variável `k` no script para alterar o tamanho da amostra.
 
 ### Formato esperado
 
@@ -212,7 +213,7 @@ Na raiz do projeto, execute:
 cabal build
 ```
 
-O Cabal irá resolver e baixar automaticamente todas as dependências (`containers`, `text`, `split`, `time`) e compilar o executável.
+O Cabal irá resolver e baixar automaticamente todas as dependências (`containers`, `time`, `bytestring`) e compilar o executável.
 
 ### Executar o Projeto
 
@@ -241,7 +242,7 @@ O projeto inclui testes unitários escritos com o framework **HSpec**. Os testes
 - ✅ Extração da hora do timestamp (`extractHour`)
 - ✅ Fallback para hora padrão em formatos inválidos
 - ✅ Classificação de URLs de mídia vs. não-mídia (`checkIfMedia`)
-- ✅ Conversão segura de strings numéricas (`readSafeInt`)
+- ✅ Conversão segura de bytestrings numéricas (`readSafeInt`)
 
 ### Executar os Testes
 
@@ -279,85 +280,88 @@ Test suite LogAnalyzer-test: PASS
 
 ## 📋 Exemplo de Saída
 
-Ao executar o programa com o dataset de 100 mil linhas, a saída será semelhante a:
+Ao executar o programa com o dataset de 500 mil linhas, a saída será semelhante a:
 
 ```
 Iniciando análise de logs...
 
 === Distribuição de Métodos HTTP ===
-GET - 98348 requisição(ões)
-POST - 1302 requisição(ões)
-HEAD - 340 requisição(ões)
-OPTIONS - 10 requisição(ões)
+GET - 491462 requisição(ões)
+POST - 6779 requisição(ões)
+HEAD - 1683 requisição(ões)
+OPTIONS - 73 requisição(ões)
+" - 1 requisição(ões)
+\x03\x00\x00/*\xE0\x00\x00\x00\x00\x00Cookie: - 1 requisição(ões)
+\x10\x7F\x91Q\xE3\x8E\x5C\xE7\xF4>\xB3&{o\xB9F/~P\xD3B?\x91\xA9\xD2\x86\xF7fB\xB4FE\xF9\xE4U\x1B`\x1F\x16\xB4)" - 1 requisição(ões)
 
 === Timeline: Volume de Acessos por Hora ===
-00h - 3357 requisição(ões)
-01h - 2152 requisição(ões)
-02h - 1215 requisição(ões)
-03h - 787 requisição(ões)
-04h - 752 requisição(ões)
-05h - 674 requisição(ões)
-06h - 876 requisição(ões)
-07h - 1818 requisição(ões)
-08h - 3672 requisição(ões)
-09h - 5534 requisição(ões)
-10h - 6571 requisição(ões)
-11h - 7134 requisição(ões)
-12h - 6984 requisição(ões)
-13h - 6976 requisição(ões)
-14h - 6583 requisição(ões)
-15h - 6245 requisição(ões)
-16h - 5521 requisição(ões)
-17h - 5371 requisição(ões)
-18h - 5271 requisição(ões)
-19h - 5448 requisição(ões)
-20h - 4580 requisição(ões)
-21h - 4078 requisição(ões)
-22h - 4313 requisição(ões)
-23h - 4088 requisição(ões)
+00h - 16877 requisição(ões)
+01h - 10940 requisição(ões)
+02h - 6211 requisição(ões)
+03h - 3795 requisição(ões)
+04h - 3672 requisição(ões)
+05h - 3392 requisição(ões)
+06h - 4538 requisição(ões)
+07h - 8849 requisição(ões)
+08h - 18455 requisição(ões)
+09h - 27321 requisição(ões)
+10h - 32299 requisição(ões)
+11h - 35433 requisição(ões)
+12h - 35013 requisição(ões)
+13h - 34701 requisição(ões)
+14h - 33390 requisição(ões)
+15h - 31419 requisição(ões)
+16h - 27730 requisição(ões)
+17h - 26456 requisição(ões)
+18h - 26946 requisição(ões)
+19h - 27292 requisição(ões)
+20h - 23126 requisição(ões)
+21h - 19933 requisição(ões)
+22h - 22151 requisição(ões)
+23h - 20061 requisição(ões)
 
 === Top 10 Endpoints Não Encontrados (Erro 404) ===
-/apple-touch-icon-precomposed.png - 168 vez(es)
-/apple-touch-icon.png - 154 vez(es)
-/apple-touch-icon-120x120-precomposed.png - 113 vez(es)
-/apple-touch-icon-120x120.png - 109 vez(es)
-/product/themes/default-rtl/style.css - 14 vez(es)
-/product/falsedefault-rtl/style.css - 11 vez(es)
-/apple-touch-icon-152x152.png - 10 vez(es)
-/apple-touch-icon-152x152-precomposed.png - 9 vez(es)
-/m/alexaGooleAnalitic - 6 vez(es)
-/static/plugins/ckeditor-3.6.2.2/js/ckeditor/contents.min.css - 3 vez(es)
+/apple-touch-icon-precomposed.png - 869 vez(es)
+/apple-touch-icon.png - 796 vez(es)
+/apple-touch-icon-120x120.png - 621 vez(es)
+/apple-touch-icon-120x120-precomposed.png - 606 vez(es)
+/product/themes/default-rtl/style.css - 47 vez(es)
+/product/falsedefault-rtl/style.css - 41 vez(es)
+/apple-touch-icon-152x152-precomposed.png - 39 vez(es)
+/m/alexaGooleAnalitic - 38 vez(es)
+/apple-touch-icon-152x152.png - 28 vez(es)
+/static/plugins/ckeditor-3.6.2.2/js/ckeditor/contents.min.css - 16 vez(es)
 
 === Top 10 IPs geradores de Erros ===
-66.249.66.194 - 118 erro(s)
-104.222.32.91 - 110 erro(s)
-151.239.241.163 - 17 erro(s)
-91.99.47.57 - 16 erro(s)
-5.78.190.233 - 12 erro(s)
-91.99.30.32 - 11 erro(s)
-5.117.116.238 - 9 erro(s)
-31.184.130.52 - 6 erro(s)
-86.55.249.206 - 6 erro(s)
-162.223.91.51 - 5 erro(s)
+66.249.66.194 - 533 erro(s)
+104.222.32.91 - 530 erro(s)
+151.239.241.163 - 83 erro(s)
+91.99.47.57 - 72 erro(s)
+5.78.190.233 - 48 erro(s)
+91.99.30.32 - 41 erro(s)
+5.117.116.238 - 40 erro(s)
+37.9.113.152 - 38 erro(s)
+2.191.96.86 - 31 erro(s)
+95.82.39.94 - 26 erro(s)
 
 === Top 10 Endpoints Mais Acessados ===
-/settings/logo - 3364 acesso(s)
-/static/css/font/wyekan/font.woff - 2694 acesso(s)
-/static/images/guarantees/bestPrice.png - 1358 acesso(s)
-/static/images/guarantees/fastDelivery.png - 1283 acesso(s)
-/static/images/guarantees/warranty.png - 1221 acesso(s)
-/static/images/guarantees/goodShopping.png - 1126 acesso(s)
-/static/images/guarantees/support.png - 983 acesso(s)
-/favicon.ico - 967 acesso(s)
-/site/alexaGooleAnalitic - 929 acesso(s)
-/static/images/amp/telegram.png - 892 acesso(s)
+/settings/logo - 17050 acesso(s)
+/static/css/font/wyekan/font.woff - 13606 acesso(s)
+/static/images/guarantees/bestPrice.png - 6716 acesso(s)
+/static/images/guarantees/fastDelivery.png - 6106 acesso(s)
+/static/images/guarantees/warranty.png - 5909 acesso(s)
+/static/images/guarantees/goodShopping.png - 5528 acesso(s)
+/site/alexaGooleAnalitic - 5197 acesso(s)
+/favicon.ico - 5006 acesso(s)
+/static/images/guarantees/support.png - 4690 acesso(s)
+/static/images/amp/telegram.png - 4440 acesso(s)
 
 === Perfil de Consumo de Banda ===
-Total Trafegado : 1168.74 MB
-Consumo de Mídia: 644.06 MB
-Consumo de HTML : 524.67 MB
+Total Trafegado : 5936.15 MB
+Consumo de Mídia: 3195.77 MB
+Consumo de HTML : 2740.38 MB
 
-Processamento concluído em: 11.8441508s
+Processamento concluído em: 4.380143s
 ```
 
 > **Nota:** Os valores acima são ilustrativos. Os resultados reais dependem do conteúdo do dataset utilizado.
@@ -371,7 +375,7 @@ Processamento concluído em: 11.8441508s
 | **Haskell (GHC)**         | Linguagem de programação funcional pura e compilada    |
 | **Cabal**                 | Sistema de build e gerenciamento de dependências       |
 | **Data.Map.Strict**       | Estrutura de dicionário com avaliação estrita          |
-| **Data.List.Split**       | Biblioteca para split de strings (pacote `split`)      |
+| **Data.ByteString.Char8** | Processamento eficiente de strings em bytes (`bytestring`) |
 | **Data.Time**             | Medição de tempo de execução                          |
 | **Text.Printf**           | Formatação de saída numérica                          |
 | **HSpec**                 | Framework de testes unitários em estilo BDD            |

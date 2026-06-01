@@ -71,9 +71,8 @@ executable LogAnalyzer
     -- Other library packages from which modules are imported.
     build-depends:    base ^>=4.18.3.0,
                       containers,
-                      text,
-                      split,
-                      time
+                      time,
+                      bytestring
 
     -- Directories containing source files.
     hs-source-dirs:   app,
@@ -89,9 +88,8 @@ test-suite LogAnalyzer-test
     other-modules:    LogAnalyzer
     build-depends:    base >=4.18.3.0,
                       containers,
-                      text,
-                      split,
-                      hspec
+                      hspec,
+                      bytestring
     hs-source-dirs:   test,
                       src
     default-language: Haskell2010

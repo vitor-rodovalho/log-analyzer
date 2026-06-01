@@ -1,18 +1,19 @@
 module LogAnalyzer where
 
-import Data.List (foldl', isPrefixOf, isSuffixOf, sortBy)
-import Data.List.Split (splitOn)
+import qualified Data.ByteString.Char8 as B
+import Data.List (foldl', sortBy)
 import qualified Data.Map.Strict as Map
 import Data.Ord (Down (..), comparing)
 
 -- CONSTANTES E REGRAS DE NEGÓCIO
+
 -- | Extensões de arquivo consideradas como mídia pesada.
-mediaExtensions :: [String]
-mediaExtensions = [".png", ".jpg", ".jpeg", ".gif", ".webp"]
+mediaExtensions :: [B.ByteString]
+mediaExtensions = map B.pack [".png", ".jpg", ".jpeg", ".gif", ".webp"]
 
 -- | Diretórios (prefixos) que indicam conteúdo de mídia.
-mediaDirectories :: [String]
-mediaDirectories = ["/image/", "/static/images/"]
+mediaDirectories :: [B.ByteString]
+mediaDirectories = map B.pack ["/image/", "/static/images/"]
 
 -- | Status HTTP que determinam o início da faixa de erro (Client/Server Errors).
 httpErrorThreshold :: Int
@@ -23,17 +24,17 @@ httpNotFound :: Int
 httpNotFound = 404
 
 -- | Hora padrão (fallback) caso o log esteja corrompido ou sem delimitador.
-fallbackHour :: String
-fallbackHour = "00"
+fallbackHour :: B.ByteString
+fallbackHour = B.pack "00"
 
 -- | Tipo de dado imutável que representa uma única linha de log processada.
 data LogEntry = LogEntry
-  { ipAddress :: String,
-    method :: String,
-    endpoint :: String,
+  { ipAddress :: B.ByteString,
+    method :: B.ByteString,
+    endpoint :: B.ByteString,
     statusCode :: Int,
     bytesSent :: Int,
-    hour :: String,
+    hour :: B.ByteString,
     isMedia :: Bool
   }
   deriving (Show, Eq)
@@ -41,28 +42,28 @@ data LogEntry = LogEntry
 -- | Estrutura agregadora (Record) para empacotar e retornar todos os resultados
 -- numéricos do processamento de uma só vez, sem efeitos colaterais.
 data LogMetrics = LogMetrics
-  { topErrorIps :: [(String, Int)],
-    topEndpoints :: [(String, Int)],
+  { topErrorIps :: [(B.ByteString, Int)],
+    topEndpoints :: [(B.ByteString, Int)],
     totalMb :: Double,
-    methodDist :: [(String, Int)],
-    top404s :: [(String, Int)],
-    reqPerHour :: [(String, Int)],
+    methodDist :: [(B.ByteString, Int)],
+    top404s :: [(B.ByteString, Int)],
+    reqPerHour :: [(B.ByteString, Int)],
     mediaMb :: Double,
     htmlMb :: Double
   }
   deriving (Show)
 
--- | [MAP] Transforma uma string bruta em um dado estruturado.
+-- | [MAP] Transforma uma bytestring bruta em um dado estruturado.
 -- Retorna um tipo 'Maybe' para lidar com segurança caso alguma linha do log esteja corrompida ou incompleta.
-parseLine :: String -> Maybe LogEntry
+parseLine :: B.ByteString -> Maybe LogEntry
 parseLine line =
-  let parts = words line
+  let parts = B.words line
    in if length parts >= 10
         then
           Just $
             LogEntry
               { ipAddress = head parts,
-                method = drop 1 (parts !! 5),
+                method = B.drop 1 (parts !! 5),
                 endpoint = parts !! 6,
                 statusCode = readSafeInt (parts !! 8),
                 bytesSent = readSafeInt (parts !! 9),
@@ -75,29 +76,29 @@ parseLine line =
 
 -- | [FUNÇÃO AUXILIAR] Garante a extração da hora (posição 1 após o split do timestamp).
 -- Retorna um fallback ("00") caso o formato da data não contenha o delimitador ":".
-extractHour :: String -> String
+extractHour :: B.ByteString -> B.ByteString
 extractHour timeStr =
-  let tokens = splitOn ":" timeStr
+  let tokens = B.split ':' timeStr
    in if length tokens >= 2 then tokens !! 1 else fallbackHour
 
 -- | [FUNÇÃO AUXILIAR] Valida se a URL requisitada é um arquivo de mídia pesada.
 -- Combina verificações de diretórios dinâmicos com extensões de arquivos estáticos.
-checkIfMedia :: String -> Bool
+checkIfMedia :: B.ByteString -> Bool
 checkIfMedia url =
-  let hasMediaExtension = any (`isSuffixOf` url) mediaExtensions
-      hasMediaDirectory = any (`isPrefixOf` url) mediaDirectories
+  let hasMediaExtension = any (`B.isSuffixOf` url) mediaExtensions
+      hasMediaDirectory = any (`B.isPrefixOf` url) mediaDirectories
    in hasMediaExtension || hasMediaDirectory
 
--- | [FUNÇÃO AUXILIAR] Converte String para Int de forma pura.
+-- | [FUNÇÃO AUXILIAR] Converte ByteString para Int de forma pura.
 -- Evita a quebra (Exception) do parser caso a coluna de bytes venha vazia ("-") no dataset.
-readSafeInt :: String -> Int
-readSafeInt s = case reads s of
-  [(val, "")] -> val
-  _ -> 0
+readSafeInt :: B.ByteString -> Int
+readSafeInt s = case B.readInt s of
+  Just (val, _) -> val
+  Nothing -> 0
 
 -- | [REDUCE] Cria um dicionário de frequência (Chave-Valor) a partir de uma lista genérica.
 -- Utiliza avaliação estrita (foldl') para evitar estouro de memória (Space Leak).
-countOcurrences :: [String] -> [(String, Int)]
+countOcurrences :: [B.ByteString] -> [(B.ByteString, Int)]
 countOcurrences items =
   let freqMap = foldl' (\acc item -> Map.insertWith (+) item 1 acc) Map.empty items
    in Map.toList freqMap
@@ -108,9 +109,9 @@ totalBytes :: [LogEntry] -> Int
 totalBytes = foldl' (\acc entry -> acc + bytesSent entry) 0
 
 -- | [PIPELINE CENTRAL] Recebe o arquivo inteiro em texto e engatilha todas as métricas.
-analyzeTraffic :: String -> LogMetrics
+analyzeTraffic :: B.ByteString -> LogMetrics
 analyzeTraffic fileContent =
-  let allLines = lines fileContent
+  let allLines = B.lines fileContent
 
       -- Mapeia e filtra linhas válidas silenciosamente descartando os 'Nothing'
       parsedLogs =

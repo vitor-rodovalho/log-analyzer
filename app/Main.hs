@@ -1,5 +1,6 @@
 module Main where
 
+import qualified Data.ByteString.Char8 as B
 import Data.Time.Clock (diffUTCTime, getCurrentTime)
 import LogAnalyzer
 import Text.Printf (printf)
@@ -13,23 +14,23 @@ main = do
   putStrLn "Iniciando análise de logs..."
   start <- getCurrentTime
 
-  fileContent <- readFile logFilePath
+  fileContent <- B.readFile logFilePath
   let metrics = analyzeTraffic fileContent
 
   putStrLn "\n=== Distribuição de Métodos HTTP ==="
-  mapM_ (\(m, count) -> putStrLn $ m ++ " - " ++ show count ++ " requisição(ões)") (methodDist metrics)
+  mapM_ (\(m, count) -> putStrLn $ B.unpack m ++ " - " ++ show count ++ " requisição(ões)") (methodDist metrics)
 
   putStrLn "\n=== Timeline: Volume de Acessos por Hora ==="
-  mapM_ (\(h, count) -> putStrLn $ h ++ "h - " ++ show count ++ " requisição(ões)") (reqPerHour metrics)
+  mapM_ (\(h, count) -> putStrLn $ B.unpack h ++ "h - " ++ show count ++ " requisição(ões)") (reqPerHour metrics)
 
   putStrLn "\n=== Top 10 Endpoints Não Encontrados (Erro 404) ==="
-  mapM_ (\(ep, count) -> putStrLn $ ep ++ " - " ++ show count ++ " vez(es)") (top404s metrics)
+  mapM_ (\(ep, count) -> putStrLn $ B.unpack ep ++ " - " ++ show count ++ " vez(es)") (top404s metrics)
 
   putStrLn "\n=== Top 10 IPs geradores de Erros ==="
-  mapM_ (\(ip, count) -> putStrLn $ ip ++ " - " ++ show count ++ " erro(s)") (topErrorIps metrics)
+  mapM_ (\(ip, count) -> putStrLn $ B.unpack ip ++ " - " ++ show count ++ " erro(s)") (topErrorIps metrics)
 
   putStrLn "\n=== Top 10 Endpoints Mais Acessados ==="
-  mapM_ (\(ep, count) -> putStrLn $ ep ++ " - " ++ show count ++ " acesso(s)") (topEndpoints metrics)
+  mapM_ (\(ep, count) -> putStrLn $ B.unpack ep ++ " - " ++ show count ++ " acesso(s)") (topEndpoints metrics)
 
   putStrLn "\n=== Perfil de Consumo de Banda ==="
   printf "Total Trafegado : %.2f MB\n" (totalMb metrics)

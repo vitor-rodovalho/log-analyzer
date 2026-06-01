@@ -3,7 +3,7 @@ import time
 from pathlib import Path
 
 # Tamanho da amostra desejada
-k = 500000
+k = 100000
 amostra = []
 
 print(f"Varrendo o arquivo para selecionar {k} linhas aleatórias...")
