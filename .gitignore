@@ -1,0 +1,22 @@
+# Arquivos de dados
+data/
+
+# Artefatos de compilação do Cabal e GHC
+dist-newstyle/
+dist/
+*.o
+*.hi
+*.hc
+
+# Configurações locais do Cabal
+cabal.project.local
+cabal.project.local~
+.ghc.environment.*
+
+# Arquivos de IDE e SO (VS Code, Haskell Language Server, Windows/Mac)
+.vscode/
+.hie/
+.DS_Store
+Thumbs.db
+*.swp
+*~
